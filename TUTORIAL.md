@@ -23,7 +23,7 @@ There a number of Python files in the repo which show you how the code should ro
 
 To start with, open a new file for your implementation of the game (e.g. `my_game.py`). You can run the game at any time by typing `python my_game.py` (or whatever the name of your file is) in the terminal of your choice.
 
-The code and assets used here were adapted from https://github.com/sourabhv/FlapPyBird. If you wish to add extra features to your game, you may wish to inspect that version of the game.
+The code and assets used here were adapted from https://github.com/sourabhv/FlapPyBird. If you wish to add extra features to your game, you may wish to inspect that version of the game. It is included in this repo as `flappy.py`.
 
 For brevity some aspects of this code will not represent best practices, but it will suffice for demonstration. A good exercise would be to go through the code after completion and attempt to improve it.
 
