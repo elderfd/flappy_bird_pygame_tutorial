@@ -345,3 +345,17 @@ while keep_game_running:
 ```
 
 We have made a large number of changes to the code in this section so I strongly recommend reading `flappy_bird_v4.py` to make sure you didn't miss anything. You now have Flappy Bird without the obstacles, we are getting close!
+
+# Adding the obstacles
+As the game currently stands we have no way of scoring points and no obstacles to avoid. We will add both of those in this section. First we will work with obstacles.
+
+
+
+# Extensions
+Now you have a simple but working version of Flappy Bird! Congratulations! If you've enjoyed the tutorial so far, why not try adding your extensions or customising the game. Here are some suggestions,
+
+- Scrolling background.
+- Difficulty levels (e.g. movement speed, gap size).
+- A leaderboard.
+- Custom graphics.
+- Take a look at the pygame.sprite package and notice that we've actually implemented some things by hand that PyGame could have done for us. Convert the code to make use of this.
