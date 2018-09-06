@@ -12,6 +12,8 @@ Python is a general purpose programming language with a wide range of uses. For 
 
 For this tutorial you will need to have PyGame installed, which can be done using the python package installer by typing ```pip install pygame``` in your terminal of choice. If this doesn't work, then double check you have Python properly installed.
 
+The tutorial was written with Python 3 in mind and tested against that, but should largely work for Python 2 as well.
+
 # This tutorial
 This tutorial will attempt to walk you through the production of a simple version of Flappy Bird. Don't feel like you have to stick to the tutorial completely as you go, make the game your own!
 
@@ -349,7 +351,262 @@ We have made a large number of changes to the code in this section so I strongly
 # Adding the obstacles
 As the game currently stands we have no way of scoring points and no obstacles to avoid. We will add both of those in this section. First we will work with obstacles.
 
+As before we load images for our new game objects. Pipes come from both the top and bottom of the screen so we also make an inverted copy,
 
+```python
+# Load pipe image twice, the second time invert it
+images["pipe_up"] = pygame.image.load('assets/sprites/pipe-green.png').convert_alpha()
+images["pipe_down"] = pygame.transform.rotate(
+    pygame.image.load('assets/sprites/pipe-green.png').convert_alpha(),
+    180
+)
+```
+
+Similar to how we refactored the handling of bird data, we make a `Pipe` class,
+
+```python
+import random
+from enum import Enum
+
+class Pipe:
+    """Holds info about an obstacle pipe"""
+    class Direction(Enum):
+        UP = 0
+        DOWN = 1
+
+    def __init__(self, x = 0, y = 0, direction = Direction.UP):
+        self.x = x
+        self.y = y
+        self.direction = direction
+
+    @staticmethod
+    def generate_random_pair(initial_x):
+        gap_size = 125
+
+        start_of_gap = random.randrange(
+            int(screen_height * 0.2),
+            int(screen_height * 0.8 - gap_size)
+        )
+
+        pipe_height = images["pipe_down"].get_height()
+
+        # Return a pair of pipes to match the generated gap
+        return (
+            Pipe(initial_x, start_of_gap + gap_size, Pipe.Direction.UP),
+            Pipe(initial_x, start_of_gap - pipe_height, Pipe.Direction.DOWN)
+        )
+```
+
+The inner class Direction is the pythonic way of generating an enumeration (enum). This simply a neat way of defining a type that can have one of a few distinct values, in this case `Direction.UP` and `Direction.DOWN`. `x` and `y` have the same meaning as for the bird, and `direction` tells us whether the pipe is coming from the top or bottom of the screen.
+
+The final piece is the static method for generating a pair of random pipes. Static simply means that this function is not tied to any particular instance of the class. In other words each variable of type `Pipe` has its own `x` and `y` but the function `generate_random_pair` is attached to the class itself. If this makes no sense, do not worry too much.
+
+In order to position the gap between the pipes randomly we make use of the `randrange` function from the `random` package. Every time you call this function you will get a different (random uniformly-distributed) integer between the first (inclusive) and second (exclusive) argument.
+
+The function simply returns a tuple containing the upper and lower pipe to match the randomly-positioned gap.
+
+Now we have a way of generating and storing pipes, let's add some! Before the main game loop add,
+
+```python
+# Stores info about all currently existing pipes
+pipes = []
+
+# Generate some initial pipes just off the screen
+pipes += list(Pipe.generate_random_pair(screen_width + 10))
+```
+
+And after you draw the ground in the loop add,
+
+```python
+for pipe in pipes:
+    screen.blit(
+        images["pipe_up"] if pipe.direction == Pipe.Direction.UP else images["pipe_down"],
+        (pipe.x, pipe.y)
+    )   
+```
+
+Notice how we use an inline `if else`. This is not always very readable but I like it in this case. If you haven't seen it before then
+
+```python
+result = "a" if something else "b"
+```
+
+is shorthand for,
+
+```python
+if something:
+    result = "a"
+else:
+    result = "b"
+```
+
+ If you run the game now you will see the first random pair of pipes generated. Let's make those pipes move toward the bird. Yes, counterintuitively we will keep the bird in a fixed position and move the pipes toward it. The reasoning behind this is beyond the scope of the tutorial, but trust me that it makes things a bit easier. Just after we change the bird position (`bird.y += bird_velocity`) add,
+
+```python
+for pipe_index, pipe in enumerate(pipes):
+    pipe.x += pipe_velocity
+```
+
+and define the velocity of pipe movement before the main game loop,
+
+```python
+# How quickly the pipes move across the screen
+pipe_velocity = -5
+```
+
+We are iterating through the list of existing pipes and moving them toward the bird at a fixed rate. Note our use of `enumerate`. This is very useful bit of Python. `enumerate` wraps around an `Iterable` such as a list, and when it is iterated through (e.g. used in a `for` loop) it yields a pair. The first element of the pair is the 0-based index of the element and the second is the element. As an example,
+
+```python
+for letter in ["a", "b", "c"]:
+    print(letter)
+
+# Prints:
+# "a"
+# "b"
+# "c"
+
+for index, letter in enumerate(["a", "b", "c"]):
+    print(index, letter)
+
+# Prints:
+# 0, "a"
+# 1, "b"
+# 2, "c"
+```
+
+In our case we do not use the `pipe_index` straight away but it is useful for the next part.
+
+As the code stands, the initial pipes will now move toward the bird. However eventually they will move off the screen and never be seen again, which isn't very useful. Let's set up the code to add some more pipes as those first two disappear. Directly after our previous bit of code (within the `for` loop over `pipes`) add,
+
+```python
+# If pipes are almost off the screen generate some more
+# Only check the up pipes to avoid duplication
+if pipe.x < 100 and pipe.x > 95 and pipe.direction == Pipe.Direction.UP:
+    pipes += list(Pipe.generate_random_pair(screen_width + 10))
+```
+
+This simply generates a new pair of pipes in the same way we made the first two, and adds them to the list of pipes. Now your game has multiple sets of pipes to avoid! However we never delete any pipes. Although they are off the screen, the game still has to store their data and keeping them moving ever leftward. Therefore let's tidy up the pipes that leave the screen. Directly after the previous piece of code add,
+
+```python
+# If the pipe is off the screen, mark it for removal
+if pipe.x < -pipe_width:
+    pipes_to_remove.append(pipe_index)
+```
+
+And before the loop over pipes create an empty list to store the indices of which pipes we must delete,
+
+```python
+pipes_to_remove = []
+```
+
+Finally after the loop over `pipes` add,
+
+```python
+# Remove excess pipes
+for pipe_index in reversed(pipes_to_remove):
+    pipes = pipes[:pipe_index] + pipes[pipe_index:]
+```
+
+`reversed` is similar to `enumerate` in that it wraps an `Iterable`. However in this case instead of adding extra information, it reverses the `Iterable`. We remove the pipes marked for removal in reverse order using the Python slice syntax. Slicing with `[:pipe_index]` gives us every element up until `pipe_index` and with `[pipe_index:]` gives us every element after. So this rather effectively returns the same list but with the element at `pipe_index` missing. You might want to think about why we need to reverse this list before removing anything.
+
+So we now have an infinite number of pipes to avoid, however the bird can happily fly through the pipes without any problems. Let's fix that.
+
+This is perhaps overkill for our case but we are going to implement a more complex form of collision detection by hand. If this part doesn't make sense, don't worry too much. PyGame can actually handle this for you (and probably more efficiently), but it's nice to understand how it works. If you're interested then read on in detail, otherwise copy and paste as appropriate.
+
+Somewhere near the top of the file we define a handy utility class,
+
+```python
+class Collider:
+    def __init__(self, image):
+        self.rect = pygame.Rect(0, 0, image.get_width(), image.get_height())
+        self.mask = [
+            [bool(image.get_at((j, i))[3]) for j in range(image.get_width())]
+            for i in range(image.get_height())
+        ] 
+
+    def set_coords(self, x, y):
+        """Moves the collider to the coordinates"""
+        self.rect.x = x
+        self.rect.y = y
+
+    def collides_with(self, other):
+        """Checks if two colliders collide"""
+        # Get the intersection of the two rects
+        intersect_rect = self.rect.clip(other.rect)
+
+        # If no intersection then definitely do not collide
+        if intersect_rect.width == 0 or intersect_rect.height == 0:
+            return False
+
+        # Get offsets for two rects
+        x1, y1 = intersect_rect.x - self.rect.x, intersect_rect.y - self.rect.y
+        x2, y2 = intersect_rect.x - other.rect.x, intersect_rect.y - other.rect.y
+
+        # Check if masks overlap
+        for i in range(intersect_rect.width):
+            for j in range(intersect_rect.height):
+                if self.mask[j + y1][i + x1] and other.mask[j + y2][i + x2]:
+                    return True
+        
+        return False
+```
+
+There is a lot going on here and I won't explain in too much detail. At its simplest what we are doing is defining a class that contains a rectangle and a mask. Instances of this class are built by providing a image (e.g. the image of the bird we loaded in from a file). It stores a bounding box (the rectangle) which defines how large the image is. We also move the coordinates (x and y) of the bounding box to match the position of the image on the screen.
+
+The mask we store is simply a 2D grid storing integers. We have a grid cell for every pixel in the image. The value at the grid cells is 1 when the pixel represented is opaque (i.e. not transparent) and 0 otherwise. This is a simple way of storing where in the image there is an object and where there is empty space. We need to do this as all images are rectangular, and we do not want empty space in the bird image (e.g. the corners) to collide with the pipes.
+
+The `collides_with` function is used to compare two objects of type `Collider` and return whether they are colliding or not. First we check whether the bounding boxes (the rectangles) overlap. This is very quick to do, and let's us know whether there's any chance at all that the two images the colliders were made from are overlapping. If the bounding boxes overlap we then make a much more expensive (in terms of calculation time) comparison of the two masks. This lets us check whether the images overlap such that two parts of the objects are overlapping, and not just empty space.
+
+With the `Collider` class ready to go we now make some colliders for the pipes and the bird. After the images are loaded in add,
+
+```python
+# Colliders for obstacles and player
+colliders = {
+    "bird": Collider(images["bird"]),
+    "pipe_up": Collider(images["pipe_up"]),
+    "pipe_down": Collider(images["pipe_down"])
+}
+```
+
+We are now set up to actually check for collisions. We go back to our old `has_crashed` function and change it to read,
+
+```python
+def has_crashed(bird, pipes):
+    """Detects if the bird has crashed"""
+    # Check if bird has hit the ground    
+    if bird.y >= ground_height:
+        return True
+
+    # Check collision between pipes and bird
+    bird_collider = colliders["bird"]
+
+    # Use offset to account for the fact that the bird
+    # x and y are at the centre of the image
+    bird_collider.set_coords(
+        bird.x - images["bird"].get_width() // 2,
+        bird.y - images["bird"].get_height() // 2
+    )
+
+    for pipe in pipes:
+        pipe_collider = colliders["pipe_up"] if pipe.direction == Pipe.Direction.UP else colliders["pipe_down"]
+
+        pipe_collider.set_coords(pipe.x, pipe.y)
+        
+        if pipe_collider.collides_with(bird_collider):
+            return True
+
+    return False
+```
+
+Notice that we now pass it the list of pipes as well, so make sure you change the use of the function later in the script to read `has_crashed(bird, pipes)` as well.
+
+The first check in this function is the same test we were doing for hitting the ground. After that we make sure the coordinates of our previously generated colliders match the position of the bird and pipes, and check for collisions there.
+
+This part was very complex so definitely check `flappy_bird_v5.py`.
+
+You now have almost all the elements of Flappy Bird. The only thing missing is a sense of accomplishment, let's add scores!
+
+# Adding scores
 
 # Extensions
 Now you have a simple but working version of Flappy Bird! Congratulations! If you've enjoyed the tutorial so far, why not try adding your extensions or customising the game. Here are some suggestions,

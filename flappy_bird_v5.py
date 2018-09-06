@@ -37,16 +37,6 @@ class Pipe:
             Pipe(initial_x, start_of_gap - pipe_height, Pipe.Direction.DOWN)
         )
 
-# class Balloon(pygame.sprite.Sprite):
-#     def __init__(self):
-#         pygame.sprite.Sprite.__init__(self) #call Sprite initializer
-#         self.image, self.rect = pygame.image.load("balloon.png")
-#         self.mask = pygame.mask.from_surface(self.image)
-
-
-# if pygame.sprite.spritecollide(b1, b2, False, pygame.sprite.collide_mask):
-#     print "sprites have collided!"
-
 class Collider:
     def __init__(self, image):
         self.rect = pygame.Rect(0, 0, image.get_width(), image.get_height())
@@ -54,7 +44,6 @@ class Collider:
             [bool(image.get_at((j, i))[3]) for j in range(image.get_width())]
             for i in range(image.get_height())
         ] 
-        # self.mask = pygame.mask.from_surface(image)
 
     def set_coords(self, x, y):
         """Moves the collider to the coordinates"""
@@ -69,8 +58,6 @@ class Collider:
         # If no intersection then definitely do not collide
         if intersect_rect.width == 0 or intersect_rect.height == 0:
             return False
-
-        # import pdb; pdb.set_trace()
 
         # Get offsets for two rects
         x1, y1 = intersect_rect.x - self.rect.x, intersect_rect.y - self.rect.y
@@ -102,6 +89,9 @@ def has_crashed(bird, pipes):
 
     # Check collision between pipes and bird
     bird_collider = colliders["bird"]
+
+    # Use offset to account for the fact that the bird
+    # x and y are at the centre of the image
     bird_collider.set_coords(
         bird.x - images["bird"].get_width() // 2,
         bird.y - images["bird"].get_height() // 2
@@ -202,12 +192,12 @@ while keep_game_running:
         for pipe_index, pipe in enumerate(pipes):
             pipe.x += pipe_velocity
 
-            pipe_width = images["pipe_up"].get_width()
-
             # If pipes are almost off the screen generate some more
             # Only check the up pipes to avoid duplication
             if pipe.x < 100 and pipe.x > 95 and pipe.direction == Pipe.Direction.UP:
                 pipes += list(Pipe.generate_random_pair(screen_width + 10))
+
+            pipe_width = images["pipe_up"].get_width()
 
             # If the pipe is off the screen, mark it for removal
             if pipe.x < -pipe_width:
