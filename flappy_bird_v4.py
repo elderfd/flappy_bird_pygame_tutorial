@@ -33,8 +33,8 @@ images = {}
 # Load the background sprite
 images["background"] = pygame.image.load("assets/sprites/background-day.png").convert()
 images["bird"] = pygame.image.load("assets/sprites/redbird-downflap.png").convert_alpha()
-images["ground"] = pygame.image.load('assets/sprites/base.png').convert_alpha()
-images["game_over"] = pygame.image.load('assets/sprites/gameover.png').convert_alpha()
+images["ground"] = pygame.image.load("assets/sprites/base.png").convert_alpha()
+images["game_over"] = pygame.image.load("assets/sprites/gameover.png").convert_alpha()
 
 # Initial position of the bird
 # Bird starts 20% of the way across the screen

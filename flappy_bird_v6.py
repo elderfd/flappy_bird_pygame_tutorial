@@ -123,6 +123,12 @@ images["bird"] = pygame.image.load("assets/sprites/redbird-downflap.png").conver
 images["ground"] = pygame.image.load("assets/sprites/base.png").convert_alpha()
 images["game_over"] = pygame.image.load("assets/sprites/gameover.png").convert_alpha()
 
+# Load in pretty digits
+for digit in range(10):
+    images[digit] = pygame.image.load(
+        "assets/sprites/{}.png".format(digit)
+    ).convert_alpha()
+
 # Load pipe image twice, the second time invert it
 images["pipe_up"] = pygame.image.load("assets/sprites/pipe-green.png").convert_alpha()
 images["pipe_down"] = pygame.transform.rotate(
@@ -171,6 +177,8 @@ pipes = []
 # Generate some initial pipes just off the screen
 pipes += list(Pipe.generate_random_pair(screen_width + 10))
 
+score = 0
+
 while keep_game_running:
     bird_acceleration = acceleration_due_to_gravity
 
@@ -178,8 +186,19 @@ while keep_game_running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             keep_game_running = False
-        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE) and not game_over:
-            bird_velocity = bird_flap_acceleration             
+        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE):
+            if game_over:
+                pipes = list(Pipe.generate_random_pair(screen_width + 10))
+                bird = Bird(
+                    x = int(screen_width * 0.2),
+                    y = int((screen_width - images["bird"].get_height()) / 2)
+                )
+                bird_velocity = 0
+                score = 0
+
+                game_over = False
+            else:
+                bird_velocity = bird_flap_acceleration             
 
     if not game_over:
         bird_velocity += bird_acceleration
@@ -208,6 +227,13 @@ while keep_game_running:
             pipes = pipes[:pipe_index] + pipes[pipe_index:]
 
         game_over = has_crashed(bird, pipes)
+
+        if not game_over:
+            # Check for scoring
+            for pipe in pipes:
+                # Only check one direction
+                if pipe.direction == Pipe.Direction.UP and pipe.x < 25 and pipe.x > 20:
+                    score += 1
 
     # Draw the background
     screen.blit(
@@ -243,6 +269,28 @@ while keep_game_running:
                 (screen_height - images["game_over"].get_height()) // 2,
             )
         )
+
+    # Draw the score
+    score_string = str(score)
+
+    # Where to draw the digits
+    digit_y = screen_height * 0.1
+
+    # Get total width of digits
+    total_digit_width = sum(images[int(digit)].get_width() for digit in score_string)
+
+    # Start drawing digits here
+    digit_x = (screen_width - total_digit_width) // 2
+
+    # Draw all digits
+    for digit in score_string:
+        screen.blit(
+            images[int(digit)],
+            (digit_x, digit_y)
+        )
+
+        # Position next digit
+        digit_x += images[int(digit)].get_width()
 
     # Update the display
     pygame.display.update()

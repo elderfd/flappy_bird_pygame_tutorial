@@ -14,6 +14,8 @@ For this tutorial you will need to have PyGame installed, which can be done usin
 
 The tutorial was written with Python 3 in mind and tested against that, but should largely work for Python 2 as well.
 
+The parameter values for the game (e.g. the size of the gap between pipes, how fast the bird moves...) have not been extensively tested. The game may be frustratingly difficult, feel free to play with these values as you go.
+
 # This tutorial
 This tutorial will attempt to walk you through the production of a simple version of Flappy Bird. Don't feel like you have to stick to the tutorial completely as you go, make the game your own!
 
@@ -267,7 +269,7 @@ screen.blit(
 Of course we are not currently drawing the ground so the bird will have "crashed" at a seemingly arbitrary height in the game. Let's load the image for the ground at the same place as the other images,
 
 ```python
-images["ground"] = pygame.image.load('assets/sprites/base.png').convert_alpha()
+images["ground"] = pygame.image.load("assets/sprites/base.png").convert_alpha()
 ```
 
 and then draw the ground before we draw the bird,
@@ -285,7 +287,7 @@ Now we are drawing the ground, and detecting if the bird touches it, we need to 
 First load the game_over image,
 
 ```python
-images["game_over"] = pygame.image.load('assets/sprites/gameover.png').convert_alpha()
+images["game_over"] = pygame.image.load("assets/sprites/gameover.png").convert_alpha()
 ```
 
 Then change the main game loop to look like the following,
@@ -355,9 +357,9 @@ As before we load images for our new game objects. Pipes come from both the top 
 
 ```python
 # Load pipe image twice, the second time invert it
-images["pipe_up"] = pygame.image.load('assets/sprites/pipe-green.png').convert_alpha()
+images["pipe_up"] = pygame.image.load("assets/sprites/pipe-green.png").convert_alpha()
 images["pipe_down"] = pygame.transform.rotate(
-    pygame.image.load('assets/sprites/pipe-green.png').convert_alpha(),
+    pygame.image.load("assets/sprites/pipe-green.png").convert_alpha(),
     180
 )
 ```
@@ -607,12 +609,98 @@ This part was very complex so definitely check `flappy_bird_v5.py`.
 You now have almost all the elements of Flappy Bird. The only thing missing is a sense of accomplishment, let's add scores!
 
 # Adding scores
+After the complexity of the previous section, you'll be happy to know the last bits get a bit easier.
+
+Firstly, you may have been a bit frustrated testing your game so far as everytime the game ended you had to close and re-open it. Let's fix that now.
+
+We will change the functionality of the space bar so that if the game is still running, the bird jumps, and if the game is over, it restarts the game. Change the old code for responding to user input to now read,
+
+```python
+if event.type == pygame.QUIT:
+    keep_game_running = False
+elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE):
+    if game_over:
+        pipes = list(Pipe.generate_random_pair(screen_width + 10))
+        bird = Bird(
+            x = int(screen_width * 0.2),
+            y = int((screen_width - images["bird"].get_height()) / 2)
+        )
+        bird_velocity = 0
+        score = 0
+
+        game_over = False
+    else:
+        bird_velocity = bird_flap_acceleration 
+```
+
+This should all be rather self-explanatory. We now have an infinitely replayable game. It would be preferable to have the game reset contained with a function as currently we duplicate code for starting the game and for resetting.
+
+Notice that we also added a `score` variable, which we will work with in the next section. Also initialise this variable before the main game loop.
+
+How do we score a point in Flappy Bird? Whenever the bird passes an obstacle. Equivalently whenever a pipe passes a critical portion of the screen. In the main game loop, directly after collisions are checked for, add,
+
+```python
+if not game_over:
+    # Check for scoring
+    for pipe in pipes:
+        # Only check one direction
+        if pipe.direction == Pipe.Direction.UP and pipe.x < 25 and pipe.x > 20:
+            score += 1
+```
+
+Note that similar to when we specified at what x range to create new pipes we are using magic numbers. This is not good practice but suffices for this tutorial.
+
+Now we have a score we want to display it in proud letters at the top of the screen. First load in the images for the necessary digits,
+
+```python
+# Load in pretty digits
+for digit in range(10):
+    images[digit] = pygame.image.load(
+        "assets/sprites/{}.png".format(digit)
+    ).convert_alpha()
+```
+
+We use the Python string format function to automatically generate the appropriate file names for each digit.
+
+Now we want to render the score on the screen. Just before the screen is updated add,
+
+```python
+# Draw the score
+score_string = str(score)
+
+# Where to draw the digits
+digit_y = screen_height * 0.1
+
+# Get total width of digits
+total_digit_width = sum(images[int(digit)].get_width() for digit in score_string)
+
+# Start drawing digits here
+digit_x = (screen_width - total_digit_width) // 2
+
+# Draw all digits
+for digit in score_string:
+    screen.blit(
+        images[int(digit)],
+        (digit_x, digit_y)
+    )
+
+    # Position next digit
+    digit_x += images[int(digit)].get_width()
+```
+
+See how we use the combination of `sum` and a generator comprehension to quickly get the total width of all the digits we need to print.
+
+I'll be very impressed if you ever get your score high enough to actually test that multiple digits are placed correctly.
 
 # Extensions
-Now you have a simple but working version of Flappy Bird! Congratulations! If you've enjoyed the tutorial so far, why not try adding your extensions or customising the game. Here are some suggestions,
+Now you have a simple but working version of Flappy Bird! Congratulations! Take a look at `flappy_bird_v6.py` to compare against your finished product.
+
+If you've enjoyed the tutorial so far, why not try adding your extensions or customising the game. Here are some suggestions,
 
 - Scrolling background.
 - Difficulty levels (e.g. movement speed, gap size).
 - A leaderboard.
 - Custom graphics.
+- Try to use the supplied sounds in assets, e.g. a sound plays on collision.
 - Take a look at the pygame.sprite package and notice that we've actually implemented some things by hand that PyGame could have done for us. Convert the code to make use of this.
+- Reduce the reliance of this code on global state and refactor into functions and multiple files.
