@@ -208,3 +208,140 @@ You might notice that currently the updating of the bird's position and the draw
 If you run the game now (`flappy_bird_v3.py`) you will have a bird that slowly falls toward the bottom of the screen, but can be made to move upwards by pressing the space bar. The poor bird will however fall off the bottom of the screen if you do not press space enough, we will fix this next.
 
 # Handling the edges of the screen
+To make this simple we will assume that the bird can fly as high as it likes (although it will go off the screen). However, if the bird hits the ground then it's game over. To detect this, we will simply check if the bird has descended below a certain height.
+
+We will refactor our code slightly at this point to make it easier to understand and extend later. First at the top of the file, just after we import PyGame add,
+
+```python
+class Bird:
+    """Holds data about the player bird"""
+    def __init__(self, x = 0, y = 0):
+        self.x = x
+        self.y = y
+```
+
+We produce a class here to help us encapsulate all the important information about the bird into one value. If you do not know what a class is, do not worry too much, but you can think of it as a way of defining a new type of variable. This type can contain a selection of its own internal variables and functions. Here we start by defining a `Bird` class with member variables for storing its position.
+
+Where before we defined the x and y position of the bird as separate variables we can now replace this with,
+
+```python
+bird = Bird(
+    x = int(screen_width * 0.2),
+    y = int((screen_width - images["bird"].get_height()) / 2)
+)
+```
+
+Also go through the code and replace every instance of `bird_y` with `bird.y` and `bird_x` with `bird.x` to match the fact that the coordinates are now stored within the `bird` variable.
+
+Now within the main game loop, just before we update the screen, we check if the bird has crashed,
+
+```python
+game_over = has_crashed(bird)
+```
+
+Here we are using the `has_crashed` function to determine if the data held within the bird variables indicates a crash. If the bird has crashed then we mark that the game is over. Note that we haven't written the `has_crashed` function yet so this code doesn't yet work. So let's implement that function! After you have defined the height and width of the screen add,
+
+```python
+# How high up the screen the ground extends
+ground_height = int(screen_height * 0.79)
+
+def has_crashed(bird):
+    """Detects if the bird has crashed"""
+    return bird.y >= ground_height
+```
+
+This is a very simple collision detection, and just checks whether the bird has moved below or touched the ground (remember that a greater y coordinate is further downward in PyGame). There is a slight issue with this code as it stands. With the way we have written the rendering code thus far, the bird is drawn so that the top-left corner of the image sits at the coordinates of the bird. Therefore our `has_crashed` function will only detect when the top-left of the bird passes below the ground. There are a few ways we could fix this but we will opt for changing the rendering of the bird, such that the center of the image is rendered at its coordinates. This means that the bird can slightly overlap with the ground without crashing, but it is a simple fix. Note that if you want to make the collision detection more strict, you could account for the height of the bird image when detecting collision. Change the part of the code that draws the bird to,
+
+```python
+screen.blit(
+    images["bird"],
+    (
+        bird.x - images["bird"].get_width() // 2,
+        bird.y - images["bird"].get_height() // 2
+    )
+)
+```
+
+Of course we are not currently drawing the ground so the bird will have "crashed" at a seemingly arbitrary height in the game. Let's load the image for the ground at the same place as the other images,
+
+```python
+images["ground"] = pygame.image.load('assets/sprites/base.png').convert_alpha()
+```
+
+and then draw the ground before we draw the bird,
+
+```python
+# Draw the ground
+screen.blit(
+    images["ground"],
+    (0, ground_height)
+)
+```
+
+Now we are drawing the ground, and detecting if the bird touches it, we need to work out what to do next. To begin with, we will simply end the game and display a game over screen. This is a slightly complex change as we need the main game loop to do one thing if the game is over and another if not. To do so we will use a variable `game_over` to track whether the game has ended yet. If this variable is false the game works as before, if true then it just displays game over.
+
+First load the game_over image,
+
+```python
+images["game_over"] = pygame.image.load('assets/sprites/gameover.png').convert_alpha()
+```
+
+Then change the main game loop to look like the following,
+
+```python
+game_over = False
+
+while keep_game_running:
+    bird_acceleration = acceleration_due_to_gravity
+
+    # Checks all pending game events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            keep_game_running = False
+        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE) and not game_over:
+            bird_velocity = bird_flap_acceleration             
+
+    if not game_over:
+        bird_velocity += bird_acceleration
+
+        # Change the y position according to speed
+        bird.y += bird_velocity
+
+        game_over = has_crashed(bird)
+
+    # Draw the background
+    screen.blit(
+        images["background"],
+        (0, 0)
+    )
+
+    # Draw the ground
+    screen.blit(
+        images["ground"],
+        (0, ground_height)
+    )
+
+    screen.blit(
+        images["bird"],
+        (
+            bird.x - images["bird"].get_width() // 2,
+            bird.y - images["bird"].get_height() // 2
+        )
+    )
+
+    if game_over:
+        screen.blit(
+            images["game_over"],
+            (
+                (screen_width - images["game_over"].get_width()) // 2,
+                (screen_height - images["game_over"].get_height()) // 2,
+            )
+        )
+
+    # Update the display
+    pygame.display.update()
+    fps_clock.tick(fps)
+
+```
+
+We have made a large number of changes to the code in this section so I strongly recommend reading `flappy_bird_v4.py` to make sure you didn't miss anything. You now have Flappy Bird without the obstacles, we are getting close!
