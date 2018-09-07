@@ -492,6 +492,8 @@ if pipe.x < 100 and pipe.x > 95 and pipe.direction == Pipe.Direction.UP:
 This simply generates a new pair of pipes in the same way we made the first two, and adds them to the list of pipes. Now your game has multiple sets of pipes to avoid! However we never delete any pipes. Although they are off the screen, the game still has to store their data and keeping them moving ever leftward. Therefore let's tidy up the pipes that leave the screen. Directly after the previous piece of code add,
 
 ```python
+pipe_width = images["pipe_up"].get_width()
+
 # If the pipe is off the screen, mark it for removal
 if pipe.x < -pipe_width:
     pipes_to_remove.append(pipe_index)
