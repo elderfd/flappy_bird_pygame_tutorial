@@ -122,7 +122,7 @@ Now if you run your code (as in `flappy_bird_v2.py`) you will get a window proud
 What is Flappy Bird without the eponymous hero? As with the background, the bird is drawn by "blitting" a sprite. So after we load the background sprite, we must also load the bird sprite,
 
 ```python
-images["bird"] = pygame.image.load("redbird-downflap.png").convert_alpha()
+images["bird"] = pygame.image.load("assets/sprites/redbird-downflap.png").convert_alpha()
 
 # Initial position of the bird
 # Bird starts 20% of the way across the screen
