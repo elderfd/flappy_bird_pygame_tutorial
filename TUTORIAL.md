@@ -147,9 +147,9 @@ screen.blit(
 At this point we have a static bird being rendered onto the screen. The next step is to move the bird around the screen. To do this we must track how fast the bird is moving vertically. Initially the bird is not moving at all so the velocity is 0. Add this before the main game loop.
 
 ```python
-# How much the bird accelerate directly after flap
+# How fast the bird is flying directly after flap
 # Negative because it accelerates toward the top of the screen
-bird_flap_acceleration = -15
+bird_flap_velocity = -15
 
 # Current bird velocity
 bird_velocity = 0
@@ -163,7 +163,7 @@ Within the game loop we need to see if the user has pressed the flap button (spa
 if event.type == pygame.QUIT:
     keep_game_running = False
 elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE):
-    bird_acceleration = bird_flap_acceleration   
+    bird_velocity = bird_flap_velocity   
 ```
 
 This simply checks if the currently processed event is the pressing of a key and if that key is the space key.
@@ -305,7 +305,7 @@ while keep_game_running:
         if event.type == pygame.QUIT:
             keep_game_running = False
         elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE) and not game_over:
-            bird_velocity = bird_flap_acceleration             
+            bird_velocity = bird_flap_velocity             
 
     if not game_over:
         bird_velocity += bird_acceleration
@@ -632,7 +632,7 @@ elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE):
 
         game_over = False
     else:
-        bird_velocity = bird_flap_acceleration 
+        bird_velocity = bird_flap_velocity 
 ```
 
 This should all be rather self-explanatory. We now have an infinitely replayable game. It would be preferable to have the game reset contained with a function as currently we duplicate code for starting the game and for resetting.
