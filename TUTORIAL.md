@@ -47,6 +47,8 @@ If you run the above code then you will get an infinite loop as `keep_game_runni
 So the first thing we will implement is allowing the user to quit the game. To do so we will first add some PyGame-specific set-up. Before the beginning of the loop add the code,
 
 ```python
+import pygame
+
 # Sets up the PyGame internals
 pygame.init()
 
