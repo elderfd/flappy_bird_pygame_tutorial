@@ -122,7 +122,7 @@ Now if you run your code (as in `flappy_bird_v2.py`) you will get a window proud
 What is Flappy Bird without the eponymous hero? As with the background, the bird is drawn by "blitting" a sprite. So after we load the background sprite, we must also load the bird sprite,
 
 ```python
-images["bird"] = pygame.image.load("redbird-downflap.png").convert_alpha()
+images["bird"] = pygame.image.load("assets/sprites/redbird-downflap.png").convert_alpha()
 
 # Initial position of the bird
 # Bird starts 20% of the way across the screen
@@ -147,9 +147,9 @@ screen.blit(
 At this point we have a static bird being rendered onto the screen. The next step is to move the bird around the screen. To do this we must track how fast the bird is moving vertically. Initially the bird is not moving at all so the velocity is 0. Add this before the main game loop.
 
 ```python
-# How much the bird accelerate directly after flap
+# How fast the bird is flying directly after flap
 # Negative because it accelerates toward the top of the screen
-bird_flap_acceleration = -15
+bird_flap_velocity = -15
 
 # Current bird velocity
 bird_velocity = 0
@@ -163,7 +163,7 @@ Within the game loop we need to see if the user has pressed the flap button (spa
 if event.type == pygame.QUIT:
     keep_game_running = False
 elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE):
-    bird_acceleration = bird_flap_acceleration   
+    bird_velocity = bird_flap_velocity   
 ```
 
 This simply checks if the currently processed event is the pressing of a key and if that key is the space key.
@@ -305,7 +305,7 @@ while keep_game_running:
         if event.type == pygame.QUIT:
             keep_game_running = False
         elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE) and not game_over:
-            bird_velocity = bird_flap_acceleration             
+            bird_velocity = bird_flap_velocity             
 
     if not game_over:
         bird_velocity += bird_acceleration
@@ -492,6 +492,8 @@ if pipe.x < 100 and pipe.x > 95 and pipe.direction == Pipe.Direction.UP:
 This simply generates a new pair of pipes in the same way we made the first two, and adds them to the list of pipes. Now your game has multiple sets of pipes to avoid! However we never delete any pipes. Although they are off the screen, the game still has to store their data and keeping them moving ever leftward. Therefore let's tidy up the pipes that leave the screen. Directly after the previous piece of code add,
 
 ```python
+pipe_width = images["pipe_up"].get_width()
+
 # If the pipe is off the screen, mark it for removal
 if pipe.x < -pipe_width:
     pipes_to_remove.append(pipe_index)
@@ -632,7 +634,7 @@ elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE):
 
         game_over = False
     else:
-        bird_velocity = bird_flap_acceleration 
+        bird_velocity = bird_flap_velocity 
 ```
 
 This should all be rather self-explanatory. We now have an infinitely replayable game. It would be preferable to have the game reset contained with a function as currently we duplicate code for starting the game and for resetting.

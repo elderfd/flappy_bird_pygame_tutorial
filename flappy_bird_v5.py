@@ -145,9 +145,9 @@ bird = Bird(
     y = int((screen_width - images["bird"].get_height()) / 2)
 )
 
-# How much the bird accelerate directly after flap
+# How fast the bird is flying directly after flap
 # Negative because it accelerates toward the top of the screen
-bird_flap_acceleration = -15
+bird_flap_velocity = -15
 
 # Current bird velocity
 bird_velocity = 0
@@ -179,7 +179,7 @@ while keep_game_running:
         if event.type == pygame.QUIT:
             keep_game_running = False
         elif event.type == pygame.KEYDOWN and (event.key == pygame.K_SPACE) and not game_over:
-            bird_velocity = bird_flap_acceleration             
+            bird_velocity = bird_flap_velocity             
 
     if not game_over:
         bird_velocity += bird_acceleration
